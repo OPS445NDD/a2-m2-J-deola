@@ -72,20 +72,14 @@ def percent_to_graph(percent: float, length: int=20) -> str:
 
 
 def get_sys_mem() -> int:
-    """
-    Return total system memory (MemTotal) in kB.
-    """
-    with open("/proc/meminfo") as f:
+    with open("/proc/meminfo", "r") as f:
         for line in f:
             if line.startswith("MemTotal:"):
                 return int(line.split()[1])
 
 
 def get_avail_mem() -> int:
-    """
-    Return available system memory (MemAvailable) in kB.
-    """
-    with open("/proc/meminfo") as f:
+    with open("/proc/meminfo", "r") as f:
         for line in f:
             if line.startswith("MemAvailable:"):
                 return int(line.split()[1])
@@ -124,49 +118,41 @@ def rss_mem_of_pid(proc_id: str) -> int:
 
 
 def bytes_to_human_r(kibibytes: int, decimal_places: int=2) -> str:
-    "turn 1,024 into 1 MiB, for example"
-    suffixes = ['KiB', 'MiB', 'GiB', 'TiB', 'PiB']  # iB indicates 1024
-    suf_count = 0
-    result = kibibytes 
-    while result > 1024 and suf_count < len(suffixes):
-        result /= 1024
-        suf_count += 1
-    str_result = f'{result:.{decimal_places}f} '
-    str_result += suffixes[suf_count]
-    return str_result
+    suffixes = ['KiB', 'MiB', 'GiB', 'TiB', 'PiB']
+    suf_index = 0
+    value = float(kibibytes)
+
+    while value >= 1024 and suf_index < len(suffixes) - 1:
+        value /= 1024
+        suf_index += 1
+
+    return f"{value:.{decimal_places}f} {suffixes[suf_index]}"
 
 
 if __name__ == "__main__":
     args = parse_command_args()
 
-    # Get system memory
     total_mem = get_sys_mem()
     avail_mem = get_avail_mem()
     used_mem = total_mem - avail_mem
 
-    # Percent used
     percent_used = used_mem / total_mem
-
-    # Graph
     graph = percent_to_graph(percent_used, args.length)
 
-    # Human-readable or raw
     if args.human_readable:
-        total_str = bytes_to_human_r(total_mem)
-        used_str = bytes_to_human_r(used_mem)
+        total_str = bytes_to_human_r(total_mem, 1)
+        used_str = bytes_to_human_r(used_mem, 1)
     else:
         total_str = f"{total_mem} KiB"
         used_str = f"{used_mem} KiB"
 
-    # If no program name: show system memory only
     if not args.program:
         print(f"Total: {total_str}")
         print(f"Used:  {used_str}")
         print(f"[{graph}]")
         sys.exit(0)
 
-    # If program name: show memory for each PID
-    pids = pids_of_prog(args.program)
+    pids = sorted(pids_of_prog(args.program), key=int)
 
     if len(pids) == 0:
         print(f"No running processes found for {args.program}")
@@ -176,7 +162,7 @@ if __name__ == "__main__":
         rss = rss_mem_of_pid(pid)
 
         if args.human_readable:
-            rss_str = bytes_to_human_r(rss)
+            rss_str = bytes_to_human_r(rss, 1)
         else:
             rss_str = f"{rss} KiB"
 
@@ -184,3 +170,4 @@ if __name__ == "__main__":
         bar = percent_to_graph(percent, args.length)
 
         print(f"PID {pid}: {rss_str} [{bar}]")
+
