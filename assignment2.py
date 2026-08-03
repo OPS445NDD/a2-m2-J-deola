@@ -138,7 +138,49 @@ def bytes_to_human_r(kibibytes: int, decimal_places: int=2) -> str:
 
 if __name__ == "__main__":
     args = parse_command_args()
-    if not args.program:  # no program name specified
-        pass
+
+    # Get system memory
+    total_mem = get_sys_mem()
+    avail_mem = get_avail_mem()
+    used_mem = total_mem - avail_mem
+
+    # Percent used
+    percent_used = used_mem / total_mem
+
+    # Graph
+    graph = percent_to_graph(percent_used, args.length)
+
+    # Human-readable or raw
+    if args.human_readable:
+        total_str = bytes_to_human_r(total_mem)
+        used_str = bytes_to_human_r(used_mem)
     else:
-        pass
+        total_str = f"{total_mem} KiB"
+        used_str = f"{used_mem} KiB"
+
+    # If no program name: show system memory only
+    if not args.program:
+        print(f"Total: {total_str}")
+        print(f"Used:  {used_str}")
+        print(f"[{graph}]")
+        sys.exit(0)
+
+    # If program name: show memory for each PID
+    pids = pids_of_prog(args.program)
+
+    if len(pids) == 0:
+        print(f"No running processes found for {args.program}")
+        sys.exit(0)
+
+    for pid in pids:
+        rss = rss_mem_of_pid(pid)
+
+        if args.human_readable:
+            rss_str = bytes_to_human_r(rss)
+        else:
+            rss_str = f"{rss} KiB"
+
+        percent = rss / total_mem
+        bar = percent_to_graph(percent, args.length)
+
+        print(f"PID {pid}: {rss_str} [{bar}]")
