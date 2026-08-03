@@ -64,22 +64,38 @@ def parse_command_args() -> object:
 
 
 def percent_to_graph(percent: float, length: int=20) -> str:
-    "turns a percent 0.0 - 1.0 into a bar graph"
-    pass
+    """
+    Convert a percent (0.0–1.0) into a bar graph string.
+    """
+    bars = int(percent * length)
+    return "#" * bars + "." * (length - bars)
 
 
 def get_sys_mem() -> int:
-    "return total system memory (used or available) in kB"
-    pass
+    """
+    Return total system memory (MemTotal) in kB.
+    """
+    with open("/proc/meminfo") as f:
+        for line in f:
+            if line.startswith("MemTotal:"):
+                return int(line.split()[1])
 
 
 def get_avail_mem() -> int:
-    "return total memory that is currently available"
-    pass
+    """
+    Return available system memory (MemAvailable) in kB.
+    """
+    with open("/proc/meminfo") as f:
+        for line in f:
+            if line.startswith("MemAvailable:"):
+                return int(line.split()[1])
 
 
 def pids_of_prog(app_name: str) -> list:
-    "given an app name, return all pids associated with app"
+    """
+    Use pidof to find all PIDs for a given program.
+    Returns a list of PID strings.
+    """
     result = os.popen(f"pidof {app_name}").read().strip()
 
     if result == "":
@@ -89,7 +105,10 @@ def pids_of_prog(app_name: str) -> list:
 
 
 def rss_mem_of_pid(proc_id: str) -> int:
-    "given a process id, return the Resident memory used"
+    """
+    Open /proc/<pid>/smaps and sum all Rss: values.
+    Returns total RSS memory in kB.
+    """
     total_rss = 0
 
     try:
@@ -119,7 +138,7 @@ def bytes_to_human_r(kibibytes: int, decimal_places: int=2) -> str:
 
 if __name__ == "__main__":
     args = parse_command_args()
-    if not args.program:  # not program name is specified.
+    if not args.program:  # no program name specified
         pass
     else:
         pass
