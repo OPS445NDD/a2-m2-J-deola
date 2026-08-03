@@ -64,8 +64,9 @@ def parse_command_args() -> object:
 
 
 def percent_to_graph(percent: float, length: int=20) -> str:
-    bars = int((percent / 100) * length)
-    return "#" * bars + "." * (length - bars)
+    bars = int(percent * length)
+    spaces = length - bars
+    return "#" * bars + " " * spaces
 
 
 def get_sys_mem() -> int:
