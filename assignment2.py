@@ -64,10 +64,7 @@ def parse_command_args() -> object:
 
 
 def percent_to_graph(percent: float, length: int=20) -> str:
-    """
-    Convert a percent (0.0–1.0) into a bar graph string.
-    """
-    bars = int(percent * length)
+    bars = int((percent / 100) * length)
     return "#" * bars + "." * (length - bars)
 
 
